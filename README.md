@@ -4,6 +4,131 @@ End-to-end ML project: EDA → Feature Engineering → Outlier Removal → Model
 
 ---
 
+## Table of Contents
+- [Installation](#installation)
+- [Usage](#usage)
+- [Features](#features)
+- [Model Details](#model-details)
+- [Project Structure](#project-structure)
+- [ML Pipeline Summary](#ml-pipeline-summary)
+- [Final Model Performance](#final-model-performance)
+- [Model Comparison](#model-comparison)
+- [Top Feature Importances](#top-feature-importances)
+- [Streamlit App Features](#streamlit-app-features)
+
+---
+
+## Installation
+
+### Prerequisites
+- Python 3.8 or higher
+- Git (for cloning the repository)
+
+### Steps
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/yourusername/LapSense.git
+   cd LapSense
+   ```
+
+2. **Create a virtual environment** (recommended):
+   ```bash
+   python -m venv venv
+   # On Windows:
+   venv\Scripts\activate
+   # On macOS/Linux:
+   source venv/bin/activate
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Download the dataset**:
+   - Place `laptop_price.csv` in the `data/` directory.
+   - (Note: Dataset not included in repo due to size; obtain from original source)
+
+---
+
+## Usage
+
+### Step 1: Train the Model
+Run the ML pipeline to train and save the model:
+```bash
+python laptopPricePredictorAPI.py
+```
+This script performs:
+- Data loading and exploratory data analysis (EDA)
+- Feature engineering and preprocessing
+- Outlier removal
+- Model training and comparison
+- Hyperparameter tuning with GridSearchCV
+- Saves the best model to `model/laptop_price_model.pkl`
+
+### Step 2: Launch the Web App
+Start the Streamlit application:
+```bash
+streamlit run app.py
+```
+- Open your browser to `http://localhost:8501`
+- Interact with the price prediction interface
+
+### Additional Commands
+- View EDA plots: Check the `eda_plots/` directory after training
+- Retrain model: Re-run `python laptopPricePredictorAPI.py` to update the model
+
+---
+
+## Features
+
+- **End-to-End ML Pipeline**: Complete workflow from data ingestion to model deployment
+- **Comprehensive EDA**: 9 automated plots for data visualization and insights
+- **Advanced Feature Engineering**: Custom transformations for laptop specifications
+- **Outlier Detection**: Robust removal using IQR and Z-score methods
+- **Model Comparison**: Evaluation of 10 regression algorithms
+- **Hyperparameter Tuning**: GridSearchCV for optimal model performance
+- **Interactive Web App**: User-friendly Streamlit interface for price prediction
+- **Multi-Currency Support**: Price predictions in EUR, INR, and USD
+- **Model Interpretability**: Feature importance analysis and metrics dashboard
+
+---
+
+## Model Details
+
+### Dataset
+- **Source**: Laptop price dataset
+- **Size**: 1,303 rows, 13 columns
+- **Target Variable**: `Price_euros` (continuous regression)
+
+### Preprocessing
+- **Feature Engineering**: RAM/Weight parsing, PPI calculation, CPU/GPU brand extraction, OS simplification, HDD/SSD flags
+- **Outlier Removal**: IQR + Z-score intersection (106 rows removed, 8.1%)
+- **Train/Test Split**: 80/20 ratio (957 train, 240 test samples)
+- **Encoding**: OneHotEncoder for categorical features, StandardScaler for numerical features
+
+### Algorithms Compared
+- Ridge Regression
+- Lasso Regression
+- ElasticNet
+- Decision Tree
+- Random Forest
+- Extra Trees
+- Gradient Boosting
+- AdaBoost
+- K-Nearest Neighbors (KNN)
+- Support Vector Regression (SVR)
+
+### Best Model: Gradient Boosting (Tuned)
+- **Hyperparameter Tuning**: GridSearchCV with 5-fold cross-validation
+- **Performance Metrics**:
+  - R²: 0.7898
+  - Adjusted R²: 0.7787
+  - MAE: €172.52
+  - RMSE: €250.81
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -31,45 +156,6 @@ laptop_price_ml/
 ├── requirements.txt
 └── README.md
 ```
-
----
-
-## ⚙️ Setup
-
-```bash
-# 1. Clone / copy the project folder
-cd laptop_price_ml
-
-# 2. Create a virtual environment (recommended)
-python3 -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-```
-
----
-
-## 🚀 How to Run
-
-### Step 1 — Train the model
-```bash
-python laptopPricePredictorAPI.py
-```
-This will:
-- Load and explore the dataset (EDA + 9 plots saved to `eda_plots/`)
-- Apply feature engineering
-- Remove outliers using IQR ∩ Z-score (conservative approach)
-- Compare 10 regression models with 5-fold cross-validation
-- Run GridSearchCV on the top 2 models
-- Save the best model to `model/laptop_price_model.pkl`
-- Print a final metrics summary in the terminal
-
-### Step 2 — Launch the Streamlit app
-```bash
-streamlit run app.py
-```
-Open your browser at **http://localhost:8501**
 
 ---
 
