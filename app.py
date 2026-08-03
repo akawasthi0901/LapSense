@@ -12,11 +12,12 @@
 ============================================================
 """
 
-import streamlit as st
-import pandas as pd
-import numpy as np
-import joblib
 from pathlib import Path
+from typing import Optional
+
+import streamlit as st
+import numpy as np
+import requests
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  Page Config
@@ -33,59 +34,186 @@ st.set_page_config(
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    /* Sidebar background */
-    [data-testid="stSidebar"] {background-color: #1e1e2e;}
+    /* Global background */
+    [data-testid="stAppViewContainer"] {
+        background: linear-gradient(135deg, #07111f 0%, #0f172a 45%, #111827 100%);
+    }
+
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+        border-right: 1px solid #334155;
+    }
+
+    .block-container {
+        padding-top: 1.5rem;
+        padding-bottom: 2rem;
+    }
+
+    /* Hero card */
+    .hero-box {
+        background: linear-gradient(135deg, rgba(34,197,94,0.18), rgba(59,130,246,0.22));
+        border: 1px solid rgba(148,163,184,0.25);
+        border-radius: 18px;
+        padding: 18px 22px;
+        margin-bottom: 18px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.18);
+    }
+    .hero-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #22c55e, #3b82f6);
+        color: white;
+        font-size: 0.8em;
+        font-weight: 700;
+        padding: 6px 10px;
+        border-radius: 999px;
+        margin-bottom: 10px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .hero-title {
+        font-size: 1.6em;
+        font-weight: 800;
+        color: #f8fafc;
+        margin-bottom: 6px;
+    }
+    .hero-subtitle {
+        color: #cbd5e1;
+        font-size: 0.98em;
+        line-height: 1.5;
+    }
 
     /* Metric cards */
     [data-testid="metric-container"] {
-        background-color: #2a2a3e;
-        border: 1px solid #3d3d5c;
-        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(168,85,247,0.16));
+        border: 1px solid rgba(148,163,184,0.25);
+        border-radius: 12px;
         padding: 12px 18px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.12);
     }
 
     /* Primary button */
     .stButton > button {
-        background: linear-gradient(135deg, #667eea, #764ba2);
+        background: linear-gradient(135deg, #22c55e, #3b82f6);
         color: white;
         border: none;
-        border-radius: 8px;
-        padding: 0.6em 2em;
-        font-size: 1.05em;
-        font-weight: 600;
+        border-radius: 999px;
+        padding: 0.7em 1.8em;
+        font-size: 1.02em;
+        font-weight: 700;
         width: 100%;
-        transition: 0.3s;
+        transition: 0.25s ease;
+        box-shadow: 0 8px 20px rgba(59,130,246,0.25);
     }
-    .stButton > button:hover {opacity: 0.85;}
+    .stButton > button:hover {opacity: 0.92; transform: translateY(-1px);}
 
     /* Section headers */
     .section-header {
-        color: #a78bfa;
+        color: #8b5cf6;
         font-size: 1.1em;
         font-weight: 700;
-        border-bottom: 2px solid #3d3d5c;
+        border-bottom: 2px solid rgba(139,92,246,0.35);
         padding-bottom: 4px;
         margin-bottom: 14px;
     }
 
     /* Result box */
     .result-box {
-        background: linear-gradient(135deg, #1a1a2e, #16213e);
-        border: 2px solid #667eea;
-        border-radius: 14px;
+        background: linear-gradient(135deg, #111827, #1f2937);
+        border: 1px solid rgba(96,165,250,0.4);
+        border-radius: 16px;
         padding: 28px;
         text-align: center;
         margin-top: 20px;
+        box-shadow: 0 10px 28px rgba(0,0,0,0.22);
     }
     .result-price {
         font-size: 2.8em;
         font-weight: 800;
-        color: #a78bfa;
+        color: #f8fafc;
     }
     .result-label {
-        color: #94a3b8;
+        color: #cbd5e1;
         font-size: 1em;
     }
+
+    /* Image cards */
+    .image-card {
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 16px;
+        padding: 10px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+        margin-top: 6px;
+    }
+
+    /* Form stability */
+    .stSelectbox > label, .stNumberInput > label, .stTextInput > label {
+        color: #e2e8f0;
+    }
+    [data-testid="stVerticalBlock"] > [data-testid="stWidgetLabel"] {
+        margin-bottom: 0.25rem;
+    }
+    div[data-testid="stHorizontalBlock"] {
+        gap: 0.5rem;
+    }
+    /* Brand grid */
+    .brand-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+        align-items: center;
+    }
+    .brand-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px 10px;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(148,163,184,0.14);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    .brand-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 32px rgba(0,0,0,0.24);
+        background: rgba(255,255,255,0.09);
+    }
+    .brand-label { color: #cbd5e1; font-size: 0.95rem; margin-top: 4px; }
+    .form-card {
+        background: rgba(15, 23, 42, 0.84);
+        border: 1px solid rgba(148,163,184,0.16);
+        border-radius: 24px;
+        padding: 26px 28px;
+        box-shadow: 0 18px 42px rgba(0,0,0,0.25);
+        margin-bottom: 24px;
+    }
+    .section-header {
+        color: #8b5cf6;
+        font-size: 1.08rem;
+        font-weight: 700;
+        border-bottom: 2px solid rgba(139,92,246,0.35);
+        padding-bottom: 6px;
+        margin-bottom: 16px;
+    }
+    .stButton > button {
+        background: linear-gradient(135deg, #22c55e, #3b82f6);
+        color: white;
+        border: none;
+        border-radius: 999px;
+        padding: 0.8em 1.8em;
+        font-size: 1rem;
+        font-weight: 700;
+        width: 100%;
+        max-width: 260px;
+        margin: auto;
+        transition: 0.25s ease;
+        box-shadow: 0 8px 20px rgba(59,130,246,0.25);
+    }
+    .stButton > button:hover { opacity: 0.92; transform: translateY(-1px); }
+    .block-container { max-width: 1180px; margin: auto; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -96,29 +224,38 @@ EURO_TO_INR = 90.0
 EURO_TO_USD = 1.08
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Load Model Bundle
+#  FastAPI Connection
 # ─────────────────────────────────────────────────────────────────────────────
-@st.cache_resource
-def load_model_bundle():
-    """
-    Load the serialised sklearn Pipeline + metadata from disk.
-    Cached with @st.cache_resource so it loads only once per session.
-    """
-    base_dir   = Path(__file__).resolve().parent
-    model_path = base_dir / "model" / "laptop_price_model.pkl"
+API_URL = "http://127.0.0.1:8000/api"
+ASSET_DIR = Path(__file__).resolve().parent / "assets"
+train_metrics = {}
+model_name = "FastAPI prediction service"
 
-    if not model_path.exists():
-        st.error(
-            f"⚠️  Model file not found at `{model_path}`.\n\n"
-            "Please run `python laptopPricePredictorAPI.py` first to train and save the model."
-        )
-        st.stop()
-
-    bundle = joblib.load(model_path)
-    return bundle["model"], bundle["features"], bundle.get("metrics", {}), bundle.get("model_name", "ML Model")
+# control whether the brand quick-select expander is open
+# remove quick-expander control (restoring original layout)
 
 
-model, feature_order, train_metrics, model_name = load_model_bundle()
+def get_brand_image_path(brand: str) -> Optional[Path]:
+    mapping = {
+        "dell": "dell.png",
+        "hp": "hp.png",
+        "lenovo": "lenovo.png",
+        "apple": "apple.png",
+        "asus": "asus.png",
+        "msi": "msi.png",
+        "samsung": "samsung.png",
+        "razer": "razer.png",
+        "microsoft": "Microsoft.png",
+        "lg": "LG.png",
+        "xiaomi": "xiaomi.png",
+        "toshiba": "toshiba.png",
+        "huawei": "huawei.png",
+    }
+    file_name = mapping.get(brand.lower())
+    if not file_name:
+        return None
+    image_path = ASSET_DIR / "brands" / file_name
+    return image_path if image_path.exists() else None
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  Sidebar — Model Info & Navigation
@@ -149,26 +286,50 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 #  Main — Header
 # ─────────────────────────────────────────────────────────────────────────────
-st.markdown("# 💻 Laptop Price Prediction System")
-st.markdown(
-    "Fill in the laptop specifications below and click **Predict Price** "
-    "to get an instant AI-powered price estimate."
-)
+st.markdown("""
+<div class="hero-box">
+    <div class="hero-badge">AI Price Estimator</div>
+    <div class="hero-title">Laptop price prediction, made simple</div>
+    <div class="hero-subtitle">
+        Choose your laptop specs and get a smart estimate instantly with a cleaner, more modern experience.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 st.markdown("---")
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Input Form  — 3-column layout
-# ─────────────────────────────────────────────────────────────────────────────
+brand_names = ["Dell", "HP", "Lenovo", "Apple", "Asus", "MSI", "Samsung", "Razer", "Microsoft", "LG", "Xiaomi", "Toshiba", "Huawei"]
+featured_brands = brand_names[:10]
 
-# ── Row 1: Brand & Type ───────────────────────────────────────────────────────
+st.markdown('<div class="form-card">', unsafe_allow_html=True)
+st.markdown('<p class="section-header">Supported Brands</p>', unsafe_allow_html=True)
+for row in [featured_brands[:5], featured_brands[5:10]]:
+    cols = st.columns(5, gap="small")
+    for brand, col in zip(row, cols):
+        with col:
+            image_path = get_brand_image_path(brand)
+            if image_path is not None:
+                st.image(str(image_path), width=90)
+            else:
+                st.markdown(f"<div style='color:#f8fafc'>{brand}</div>", unsafe_allow_html=True)
+    st.markdown('<div style="height:20px"></div>', unsafe_allow_html=True)
+
 st.markdown('<p class="section-header">🔹 Brand & Type</p>', unsafe_allow_html=True)
 col1, col2, col3 = st.columns(3)
 
 with col1:
+    company_options = ["Dell", "Lenovo", "HP", "Asus", "Acer", "MSI", "Toshiba",
+         "Apple", "Samsung", "Razer", "Microsoft", "Xiaomi", "LG", "Huawei", "Other"]
+    default_company = st.session_state.get('company', company_options[0])
+    try:
+        default_index = company_options.index(default_company) if default_company in company_options else 0
+    except Exception:
+        default_index = 0
     company = st.selectbox(
         "Brand / Company",
-        ["Dell", "Lenovo", "HP", "Asus", "Acer", "MSI", "Toshiba",
-         "Apple", "Samsung", "Razer", "Microsoft", "Xiaomi", "LG", "Huawei", "Other"],
+        company_options,
+        index=default_index,
+        key='company',
         help="Laptop manufacturer"
     )
 
@@ -253,35 +414,49 @@ with col5:
                        help="IPS display for wider colour gamut?")
 
 st.markdown("---")
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  Prediction
 # ─────────────────────────────────────────────────────────────────────────────
-predict_col, _ = st.columns([1, 2])
-with predict_col:
+left_col, center_col, right_col = st.columns([1, 1, 1])
+with center_col:
     predict_btn = st.button("🔍  Predict Price")
 
 if predict_btn:
-    # ── Build input DataFrame in the exact column order used during training ──
-    input_data = {
-        "Company"   : company,
-        "TypeName"  : type_name,
-        "Ram"       : int(ram),
-        "Weight"    : float(weight),
-        "Touchscreen": int(touchscreen),
-        "Ips"       : int(ips),
-        "ppi"       : float(ppi),
-        "Cpu brand" : cpu_brand,
-        "HDD"       : int(hdd),
-        "SSD"       : int(ssd),
-        "Gpu brand" : gpu_brand,
-        "os"        : os,
+    # Send the form data to FastAPI. FastAPI performs validation and prediction.
+    payload = {
+        "company": company,
+        "type_name": type_name,
+        "os": os,
+        "ram": int(ram),
+        "cpu_brand": cpu_brand,
+        "gpu_brand": gpu_brand,
+        "weight": float(weight),
+        "hdd": int(hdd),
+        "ssd": int(ssd),
+        "ppi": float(ppi),
+        "touchscreen": int(touchscreen),
+        "ips": int(ips),
     }
 
-    input_df = pd.DataFrame([input_data])[feature_order]
+    try:
+        response = requests.post(f"{API_URL}/predict", json=payload, timeout=10)
+        response.raise_for_status()
+        prediction = response.json()
+        price_eur = float(prediction["predicted_price_euros"])
+        model_name = prediction.get("model_name", model_name)
+    except requests.exceptions.ConnectionError:
+        st.error("Could not connect to FastAPI. Make sure Uvicorn is running on port 8000.")
+        st.stop()
+    except requests.exceptions.Timeout:
+        st.error("The prediction API took too long to respond.")
+        st.stop()
+    except requests.exceptions.HTTPError as error:
+        detail = response.json().get("detail", "Prediction request failed")
+        st.error(f"API error ({error.response.status_code}): {detail}")
+        st.stop()
 
-    # ── Predict ───────────────────────────────────────────────────────────────
-    price_eur = float(model.predict(input_df)[0])
     price_inr = price_eur * euro_inr
     price_usd = price_eur * euro_usd
 
