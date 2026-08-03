@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 from .schemas import HealthResponse, LaptopInput, PredictionResponse
 from .utils import load_model_bundle, prepare_features
 
+import traceback
 
 router = APIRouter()
 
@@ -25,4 +26,5 @@ def predict_price(laptop: LaptopInput) -> PredictionResponse:
 	except FileNotFoundError as error:
 		raise HTTPException(status_code=503, detail=str(error)) from error
 	except Exception as error:
+		print(traceback.format_exc())
 		raise HTTPException(status_code=500, detail="Prediction failed") from error
