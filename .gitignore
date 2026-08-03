@@ -15,6 +15,6 @@ dist/
 *.sqlite3
 *.db
 *.h5
-*.pkl
+# *.pkl
 data/
-model/
+# model/
