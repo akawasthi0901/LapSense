@@ -227,7 +227,8 @@ EURO_TO_USD = 1.08
 #  FastAPI Connection
 # ─────────────────────────────────────────────────────────────────────────────
 # API_URL = "http://127.0.0.1:8000/api"
-API_URL = "https://lapsense-fastapi.onrender.com/api"
+# API_URL = "https://lapsense-fastapi.onrender.com/api"
+API_URL = "https://lapsense.onrender.com/api"
 ASSET_DIR = Path(__file__).resolve().parent / "assets"
 train_metrics = {}
 model_name = "FastAPI prediction service"
